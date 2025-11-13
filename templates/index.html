@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% block title %}Adipri - Train Search{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto p-4 sm:p-6">
+    <header class="text-center mb-12">
+        <h1 class="text-5xl font-extrabold text-gray-900 mb-2">
+            <i class="fas fa-train-subway text-blue-600 mr-3"></i> Adipri
+        </h1>
+        <p class="text-lg text-gray-600 mt-2">Find schedules, check availability, and track your trains live.</p>
+    </header>
+
+    <!-- Search Form Card (Professional Look) -->
+    <div class="bg-white p-6 sm:p-8 rounded-2xl mb-10 border border-gray-100 shadow-2xl">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+            <i class="fas fa-search-location text-orange-500 mr-3"></i> Plan Your Journey
+        </h2>
+        
+        <form id="train-search-form" method="POST" action="/" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                <!-- Source Station -->
+                <div class="md:col-span-2 relative">
+                    <label for="source" class="block text-sm font-medium text-gray-700 mb-1">Source Station</label>
+                    <div class="relative">
+                        <input type="text" id="source" name="source" required
+                               class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg shadow-sm
+                                     focus:ring-blue-500 focus:border-blue-500 text-base"
+                               placeholder="e.g., Pune" value="{{ source_station or '' }}">
+                        <i class="fas fa-right-from-bracket absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                </div>
+
+                <!-- Swap Button -->
+                <div class="md:col-span-1 flex justify-center order-first md:order-none h-full">
+                    <button type="button" id="swap-stations" title="Swap Stations"
+                            class="p-3 mt-7 bg-gray-100 border border-gray-300 text-gray-600 rounded-full hover:bg-gray-200
+                                   transition duration-150 transform hover:rotate-180 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <i class="fas fa-right-left"></i>
+                    </button>
+                </div>
+
+                <!-- Destination Station -->
+                <div class="md:col-span-2 relative">
+                    <label for="destination" class="block text-sm font-medium text-gray-700 mb-1">Destination Station</label>
+                    <div class="relative">
+                        <input type="text" id="destination" name="destination" required
+                               class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg shadow-sm
+                                     focus:ring-blue-500 focus:border-blue-500 text-base"
+                               placeholder="e.g., Mumbai" value="{{ destination_station or '' }}">
+                        <i class="fas fa-right-to-bracket absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Train Type Filter (Below) -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                <div class="md:col-span-2">
+                    <label for="train_type" class="block text-sm font-medium text-gray-700 mb-1">Train Type Filter</label>
+                    <select id="train_type" name="train_type"
+                            class="w-full pl-4 pr-10 py-3 border border-gray-300 rounded-lg shadow-sm
+                                   focus:ring-blue-500 focus:border-blue-500 text-base appearance-none">
+                        <option value="ALL" selected>All Train Types</option>
+                        <option value="Mail/Express">Mail / Express</option>
+                        <option value="SuperFast">SuperFast</option>
+                        <option value="Duronto">Duronto</option>
+                        <option value="Humsafar">Humsafar</option>
+                        <option value="Vande Bharat">Vande Bharat</option>
+                        <option value="AC Express">AC Express</option>
+                        <option value="AC SuperFast">AC SuperFast</option>
+                        <option value="COV-Reserved">COV-Reserved</option>
+                        <option value="EMU - Pune">EMU (Local - Pune)</option>
+                    </select>
+                </div>
+                
+                <div class="md:col-span-2">
+                    <button type="submit"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg
+                               transition duration-300 transform hover:scale-[1.01] focus:outline-none focus:ring-4
+                               focus:ring-blue-500 focus:ring-opacity-50 flex items-center justify-center mt-0 md:mt-6">
+                        <i class="fas fa-search mr-2"></i> Find Schedules
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Error Block -->
+    {% if error %}
+    <div class="bg-red-100 border-l-4 border-red-500 text-red-800 p-5 rounded-lg mb-8 shadow-md">
+        <p class="font-bold mb-1"><i class="fas fa-exclamation-triangle mr-2"></i> Search Error</p>
+        {{ error }}
+    </div>
+    {% endif %}
+
+    <!-- Train Results Card -->
+    <div class="bg-white p-6 rounded-2xl shadow-2xl">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+            <i class="fas fa-list-ul text-green-600 mr-3"></i> Available Trains
+            {% if trains|length > 0 %}
+            <span class="ml-3 px-3 py-1 text-sm font-semibold text-white bg-blue-600 rounded-full">{{ trains|length }} results</span>
+            {% endif %}
+        </h2>
+
+        {% if trains|length == 0 %}
+            <p class="text-center text-gray-500 p-8 text-lg border-2 border-dashed border-gray-200 rounded-xl">
+                <i class="fas fa-road-barrier text-4xl mb-4 text-gray-300"></i><br>
+                No trains found for this route or date.<br>Try a different route or check your station codes.
+            </p>
+        {% else %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider rounded-tl-lg">Train</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Type</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Dep.</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Arr.</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Duration</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Runs On</th>
+                            <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Live Status</th>
+                            <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider rounded-tr-lg">Details</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-100">
+                        {% for train in trains %}
+                        <tr class="hover:bg-gray-50 transition duration-150">
+                            <td class="px-4 py-4 whitespace-nowrap">
+                                <div class="text-base font-semibold text-gray-900">{{ train.number }}</div>
+                                <div class="text-xs text-gray-500">{{ train.name }}</div>
+                            </td>
+                            <td class="px-4 py-4 whitespace-nowrap">
+                                <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
+                                             {% if 'SuperFast' in train.type %} bg-orange-100 text-orange-800
+                                             {% elif 'Vande Bharat' in train.type %} bg-indigo-100 text-indigo-800
+                                             {% else %} bg-blue-100 text-blue-800 {% endif %}">
+                                    {{ train.type }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-700">{{ train.departure }}</td>
+                            <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-700">{{ train.arrival }}</td>
+                            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-600">{{ train.duration }}</td>
+                            <td class="px-4 py-4 whitespace-nowrap text-sm text-green-600 font-semibold">{{ train.days }}</td>
+                            <td class="px-4 py-4 whitespace-nowrap text-center">
+                                <form action="/live_status" method="GET" class="flex items-center justify-center space-x-2">
+                                    <input type="hidden" name="train_number" value="{{ train.number }}">
+                                    <!-- Date Input styled for better integration -->
+                                    <input type="date" name="journey_date" required
+                                            class="text-sm px-2 py-1 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500">
+                                    <button type="submit" title="Check Live Status"
+                                            class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium p-2 rounded-full shadow-md
+                                                   transition duration-150 transform hover:scale-110">
+                                        <i class="fas fa-signal"></i>
+                                    </button>
+                                </form>
+                            </td>
+                            <td class="px-4 py-4 whitespace-nowrap text-center">
+                                <a href="/train_details?train_number={{ train.number }}"
+                                   class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium py-2 px-3 rounded-lg shadow-md
+                                          transition duration-150 transform hover:scale-[1.05]">
+                                    View Route
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Function to set default date for all date inputs
+        const today = new Date().toISOString().split('T')[0];
+        document.querySelectorAll('input[type="date"]').forEach(input => {
+            if (!input.value) input.value = today;
+        });
+
+        // Swap Stations Functionality
+        const swapButton = document.getElementById('swap-stations');
+        const sourceInput = document.getElementById('source');
+        const destinationInput = document.getElementById('destination');
+
+        swapButton.addEventListener('click', function() {
+            const sourceValue = sourceInput.value;
+            sourceInput.value = destinationInput.value;
+            destinationInput.value = sourceValue;
+        });
+    });
+</script>
+{% endblock %}
