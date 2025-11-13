@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ADIPRI{% endblock %}</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .nav-link.active {
+            border-bottom-width: 3px;
+            color: #2563EB;
+            font-weight: 600;
+        }
+        /* Removed custom overflow rule as it was incorrectly hiding content */
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+    <nav class="bg-white shadow-md sticky top-0 z-10">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-14">
+                
+                <!-- Left Section: Logo and Brand Name -->
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center space-x-2">
+                        <img 
+                            src="{{ url_for('static', filename='logo 1.jpg') }}" 
+                            alt="Adipri Logo"
+                            class="h-10 w-auto object-cover"> <!-- Adjusted to h-10 to fit h-14 container -->
+                        <span class="text-xl font-bold text-blue-700 tracking-tight hidden sm:inline">ADIPRI</span>
+                    </a>
+                </div>
+
+                <!-- Right Section: Desktop Navigation Links (Visible on sm and up) -->
+                <div class="hidden sm:flex sm:space-x-4">
+                    <a href="/" class="nav-link inline-flex items-center px-2 py-4 text-sm font-medium border-b-2 border-transparent text-gray-600 hover:text-blue-600 hover:border-blue-500 {% if active_page == 'home' %}border-blue-600 text-blue-600 font-semibold{% endif %}">
+                        <i class="fas fa-home mr-2 text-gray-400"></i> Home
+                    </a>
+                    <a href="/live_status" class="nav-link inline-flex items-center px-2 py-4 text-sm font-medium border-b-2 border-transparent text-gray-600 hover:text-blue-600 hover:border-blue-500 {% if active_page == 'live_status' %}border-blue-600 text-blue-600 font-semibold{% endif %}">
+                        <i class="fas fa-signal mr-2 text-gray-400"></i> Live Status
+                    </a>
+                    <a href="/train_details" class="nav-link inline-flex items-center px-2 py-4 text-sm font-medium border-b-2 border-transparent text-gray-600 hover:text-blue-600 hover:border-blue-500 {% if active_page == 'train_details' %}border-blue-600 text-blue-600 font-semibold{% endif %}">
+                        <i class="fas fa-train mr-2 text-gray-400"></i> Train Details
+                    </a>
+                    <a href="/about" class="nav-link inline-flex items-center px-2 py-4 text-sm font-medium border-b-2 border-transparent text-gray-600 hover:text-blue-600 hover:border-blue-500 {% if active_page == 'about' %}border-blue-600 text-blue-600 font-semibold{% endif %}">
+                        <i class="fas fa-info-circle mr-2 text-gray-400"></i> About
+                    </a>
+                </div>
+
+                <!-- Mobile Menu Button (Hidden on sm and up) -->
+                <div class="sm:hidden">
+                    <button type="button" id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500" aria-controls="mobile-menu-dropdown" aria-expanded="false">
+                        <span class="sr-only">Open main menu</span>
+                        <i class="fas fa-bars h-6 w-6"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu Dropdown (Initially hidden on all screens) -->
+        <div class="sm:hidden hidden border-t border-gray-100" id="mobile-menu-dropdown">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                <a href="/" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                    <i class="fas fa-home mr-2 text-blue-500"></i> Home
+                </a>
+                <a href="/live_status" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 {% if active_page == 'live_status' %}text-blue-600 bg-blue-50 font-semibold{% endif %}">
+                    <i class="fas fa-signal mr-2 text-blue-500"></i> Live Status
+                </a>
+                <a href="/train_details" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 {% if active_page == 'train_details' %}text-blue-600 bg-blue-50 font-semibold{% endif %}">
+                    <i class="fas fa-train mr-2 text-blue-500"></i> Train Details
+                </a>
+                <a href="/about" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 {% if active_page == 'about' %}text-blue-600 bg-blue-50 font-semibold{% endif %}">
+                    <i class="fas fa-info-circle mr-2 text-blue-500"></i> About
+                </a>
+            </div>
+        </div>
+    </nav>
+    <main class="p-4 sm:p-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- JavaScript for Mobile Menu Toggle -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mobileButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu-dropdown');
+
+            // Check if both elements exist before adding listeners
+            if (mobileButton && mobileMenu) {
+                mobileButton.addEventListener('click', () => {
+                    // Toggle the 'hidden' class on the dropdown menu
+                    mobileMenu.classList.toggle('hidden');
+                    
+                    // Toggle aria-expanded state for accessibility
+                    const isExpanded = mobileButton.getAttribute('aria-expanded') === 'true' || false;
+                    mobileButton.setAttribute('aria-expanded', !isExpanded);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
