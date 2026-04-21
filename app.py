@@ -1,21 +1,23 @@
 from flask import Flask, render_template, request
 from datetime import datetime
 import requests
+import os
 from urllib.parse import quote
 
 app = Flask(__name__)
 
-# ✅ Updated API base URL
 BASE_URL = "https://api.railradar.org/api/v1/trains/between"
-STATION_SEARCH_URL = "https://railradar.in/api/v1/search/stations?q="
+STATION_SEARCH_URL = "https://api.railradar.org/api/v1/search/stations?query="
+LIVE_API_BASE = "https://api.railradar.org/api/v1/trains"
 
-# ✅ Headers (USED EVERYWHERE)
+RAILRADAR_API_KEY = os.environ.get("RAILRADAR_API_KEY", "") # Render will inject this environment variable securely
+
 HEADERS = {
     "User-Agent": "Mozilla/5.0",
-    "Accept": "application/json"
+    "Accept": "application/json",
+    "X-API-Key": RAILRADAR_API_KEY
 }
 
-# ✅ Manual fallback (VERY IMPORTANT)
 MANUAL_STATIONS = {
     "chinchwad": "CCH",
     "dehu road": "DEHR",
@@ -24,20 +26,17 @@ MANUAL_STATIONS = {
     "lonavala": "LNL"
 }
 
-# ✅ Convert minutes to HH:MM
 def minutes_to_time(minutes):
     if not isinstance(minutes, int):
         return "N/A"
     return f"{minutes//60:02d}:{minutes%60:02d}"
 
-# ✅ Get station code
 def get_station_code(station_name):
     if not station_name:
         return None
 
     station_name_lower = station_name.lower().strip()
 
-    # 🔥 Step 1: Manual fallback first
     if station_name_lower in MANUAL_STATIONS:
         print(f"✅ Manual match: {station_name} → {MANUAL_STATIONS[station_name_lower]}")
         return MANUAL_STATIONS[station_name_lower]
@@ -60,7 +59,6 @@ def get_station_code(station_name):
             print(f"❌ No stations found for: {station_name}")
             return None
 
-        # Filter unwanted stations
         filtered = [
             s for s in stations
             if not any(x in s.get("name", "").lower() for x in ["shed", "yard", "depot"])
@@ -149,8 +147,8 @@ def status():
     except:
         date = journey_date
 
-    schedule_url = f"https://railradar.in/api/v1/trains/{train_number}/schedule?journeyDate={date}"
-    live_url = f"https://railradar.in/api/v1/trains/{train_number}?dataType=live&journeyDate={date}"
+    schedule_url = f"{LIVE_API_BASE}/{train_number}/schedule?journeyDate={date}"
+    live_url = f"{LIVE_API_BASE}/{train_number}?dataType=live&journeyDate={date}"
 
     try:
         schedule_resp = requests.get(schedule_url, headers=HEADERS, timeout=5)
@@ -202,7 +200,7 @@ def train_details():
         return render_template("train_details.html", train_info=None)
 
     try:
-        url = f"https://railradar.in/api/v1/trains/{train_number}"
+        url = f"{LIVE_API_BASE}/{train_number}"
         response = requests.get(url, headers=HEADERS, timeout=5)
         data = response.json()
 
