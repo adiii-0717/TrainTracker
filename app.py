@@ -117,6 +117,16 @@ def home():
                         travel_mins = t.get("travelTimeMinutes") or 0
                         t_type = str(t.get("type") or "N/A")
 
+                        # Parse runningDays which might be a dict: {'days': [...], 'allDays': True}
+                        days_data = t.get("runningDays")
+                        if isinstance(days_data, dict):
+                            if days_data.get("allDays"):
+                                days_str = "Daily"
+                            else:
+                                days_str = ", ".join([d[:3] for d in days_data.get("days", [])])
+                        else:
+                            days_str = str(days_data or "Daily")
+
                         trains.append({
                             "number": str(t.get("trainNumber") or "N/A"),
                             "name": str(t.get("trainName") or "N/A"),
@@ -124,7 +134,7 @@ def home():
                             "departure": minutes_to_time(from_sched.get("departureMinutes")),
                             "arrival": minutes_to_time(to_sched.get("arrivalMinutes")),
                             "duration": f"{travel_mins//60}h {travel_mins%60}m",
-                            "days": str(t.get("runningDays") or "Daily")
+                            "days": days_str
                         })
 
                     if selected_type != "ALL":
@@ -167,38 +177,54 @@ def live_status():
         train_info = data_block.get("train") or {}
         route = data_block.get("route") or []
 
-        source_obj = train_info.get("source") or train_info.get("from") or {}
-        source = source_obj.get("name") if isinstance(source_obj, dict) else "N/A"
-        
-        dest_obj = train_info.get("destination") or train_info.get("to") or {}
-        destination = dest_obj.get("name") if isinstance(dest_obj, dict) else "N/A"
+        # Fix: User's details page uses camelCase keys!
+        source = train_info.get("sourceStationName") or train_info.get("source", {}).get("name") or "N/A"
+        destination = train_info.get("destinationStationName") or train_info.get("destination", {}).get("name") or "N/A"
+        t_name = train_info.get("trainName") or train_info.get("name") or "N/A"
+        t_num = train_info.get("trainNumber") or train_info.get("number") or "N/A"
 
         live_response = requests.get(live_url, timeout=15)
         live_data = live_response.json()
 
         current_station = None
-        status_message = "No live data"
+        status_message = "No live data available"
+        delay = None
 
         if live_data.get("success"):
             l_data_block = live_data.get("data") or {}
+            
+            # Robust extraction of live parameters
             loc = l_data_block.get("currentLocation") or {}
-            current_station = loc.get("stationCode")
-            status = loc.get("status")
+            current_station = loc.get("stationName") or loc.get("stationCode") or l_data_block.get("currentStationName") or l_data_block.get("currentStation")
+            
+            status = loc.get("status") or l_data_block.get("status")
+            status_as_of = l_data_block.get("statusAsOf")
+            
+            delay = l_data_block.get("delayInMinutes") or loc.get("delay")
 
+            # Format status message
             if status == "AT_STATION":
-                status_message = f"At {current_station}"
+                status_message = f"Currently at {current_station}"
             elif status == "RUNNING_BETWEEN":
                 status_message = "Running between stations"
+            elif status_as_of:
+                status_message = f"Last updated: {status_as_of}"
+            else:
+                status_message = str(status or "Updating...")
+
+            if not current_station:
+                current_station = "In Transit"
 
         return render_template(
             "live_status.html",
-            train_number=train_info.get("number", "N/A"),
-            train_name=train_info.get("name", "N/A"),
+            train_number=t_num,
+            train_name=t_name,
             source=source,
             destination=destination,
             route=route,
             current_station=current_station,
-            status_message=status_message
+            status_message=status_message,
+            delay=delay
         )
 
     except Exception as e:
