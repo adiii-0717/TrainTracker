@@ -73,324 +73,281 @@
 
         <!-- Explicit User Status Text Generation -->
         {% if is_running %}
-            {% set explicit_status = "Train has left " ~ (current_station or "the previous station") ~ " and is actively running!" %}
+        {% set explicit_status = "Train has left " ~ (current_station or "the previous station") ~ " and is actively
+        running!" %}
         {% else %}
-            {% set explicit_status = "Train has arrived and is currently halted at " ~ (current_station or "Station") ~ "." %}
+        {% set explicit_status = "Train has arrived and is currently halted at " ~ (current_station or "Station") ~ "."
+        %}
         {% endif %}
 
-        <div class="bg-gradient-to-br from-gray-900 to-indigo-950 rounded-2xl overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.4)] relative border-b-8 border-indigo-600 mb-8">
-            
+        <div
+            class="bg-gradient-to-br from-gray-900 to-indigo-950 rounded-2xl overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.4)] relative border-b-8 border-indigo-600 mb-8">
+
             <!-- Cloud / Background elements -->
-            <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(circle at top right, #ffffff, transparent 70%);"></div>
+            <div class="absolute inset-0 opacity-10 pointer-events-none"
+                style="background-image: radial-gradient(circle at top right, #ffffff, transparent 70%);"></div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-0">
                 <!-- Left Details Panel -->
                 <div class="p-8 flex flex-col justify-center z-10 bg-black/20 backdrop-blur-sm">
                     <h3 class="text-2xl font-black text-white mb-4 leading-tight flex items-start">
                         {% if is_running %}
-                            <span class="flex h-4 w-4 mr-3 mt-1 relative flex-shrink-0">
-                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                                <span class="relative inline-flex rounded-full h-4 w-4 bg-green-500 shadow-[0_0_10px_#22c55e]"></span>
-                            </span>
+                        <span class="flex h-4 w-4 mr-3 mt-1 relative flex-shrink-0">
+                            <span
+                                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                            <span
+                                class="relative inline-flex rounded-full h-4 w-4 bg-green-500 shadow-[0_0_10px_#22c55e]"></span>
+                        </span>
                         {% else %}
-                            <span class="flex h-4 w-4 mr-3 mt-1 relative flex-shrink-0">
-                                <span class="relative inline-flex rounded-full h-4 w-4 bg-yellow-400 shadow-[0_0_15px_#eab308]"></span>
-                            </span>
+                        <span class="flex h-4 w-4 mr-3 mt-1 relative flex-shrink-0">
+                            <span
+                                class="relative inline-flex rounded-full h-4 w-4 bg-yellow-400 shadow-[0_0_15px_#eab308]"></span>
+                        </span>
                         {% endif %}
                         <span class="drop-shadow-lg">{{ explicit_status }}</span>
                     </h3>
 
                     <div class="grid grid-cols-2 gap-4 mt-2">
                         <div class="bg-white/10 rounded-xl p-3 border border-white/5">
-                            <p class="text-indigo-200 text-xs font-bold uppercase tracking-wider mb-1"><i class="fas fa-map-pin mr-1"></i> Current Point</p>
+                            <p class="text-indigo-200 text-xs font-bold uppercase tracking-wider mb-1"><i
+                                    class="fas fa-map-pin mr-1"></i> Current Point</p>
                             <p class="text-white text-xl font-extrabold">{{ current_station or 'N/A' }}</p>
                         </div>
                         <div class="bg-white/10 rounded-xl p-3 border border-white/5">
-                            <p class="text-indigo-200 text-xs font-bold uppercase tracking-wider mb-1"><i class="fas fa-hourglass-half mr-1"></i> Delay Status</p>
-                            <p class="text-xl font-extrabold {% if delay is none %}text-white{% elif delay > 0 %}text-red-400{% else %}text-green-400{% endif %}">
-                                {% if delay is none %} N/A {% elif delay > 0 %} {{ delay }} min late {% else %} On Time {% endif %}
+                            <p class="text-indigo-200 text-xs font-bold uppercase tracking-wider mb-1"><i
+                                    class="fas fa-hourglass-half mr-1"></i> Delay Status</p>
+                            <p
+                                class="text-xl font-extrabold {% if delay is none %}text-white{% elif delay > 0 %}text-red-400{% else %}text-green-400{% endif %}">
+                                {% if delay is none %} N/A {% elif delay > 0 %} {{ delay }} min late {% else %} On Time
+                                {% endif %}
                             </p>
                         </div>
                     </div>
                 </div>
+                <!-- Right Animation Panel (Green Screen Video Canvas) -->
+                <div
+                    class="relative min-h-[220px] bg-gradient-to-t from-gray-800 to-transparent flex items-center justify-center pb-6 z-0 overflow-hidden w-full">
 
-                <!-- Right Animation Panel -->
-                <div class="relative min-h-[220px] bg-gradient-to-t from-gray-800 to-transparent flex items-end justify-center pb-6 z-0">
-                    <!-- Animation Scene -->
-                    <div class="train-scene {{ anim_class }} w-full max-w-sm h-[160px] relative">
-                        <!-- Track -->
-                        <div class="scene-track"></div>
-                        
-                        <!-- Locomotive Graphics -->
-                        <div class="locomotive-wrapper">
-                            <div class="smoke s1"></div>
-                            <div class="smoke s2"></div>
-                            <div class="smoke s3"></div>
-                            
-                            <svg width="240" height="120" viewBox="0 0 240 120" xmlns="http://www.w3.org/2000/svg" class="loco-svg filter drop-shadow-xl">
-                                <defs>
-                                    <linearGradient id="train-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-                                        <stop offset="0%" stop-color="#ef4444" />
-                                        <stop offset="100%" stop-color="#b91c1c" />
-                                    </linearGradient>
-                                    <linearGradient id="cab-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-                                        <stop offset="0%" stop-color="#1e293b" />
-                                        <stop offset="100%" stop-color="#0f172a" />
-                                    </linearGradient>
-                                    <linearGradient id="glass-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" stop-color="#7dd3fc" />
-                                        <stop offset="100%" stop-color="#0284c7" />
-                                    </linearGradient>
-                                    <linearGradient id="beam" x1="0%" y1="0%" x2="100%" y2="0%">
-                                        <stop offset="0%" stop-color="#fef08a" stop-opacity="0.8" />
-                                        <stop offset="100%" stop-color="#fef08a" stop-opacity="0" />
-                                    </linearGradient>
-                                </defs>
-                                
-                                <!-- Cowcatcher -->
-                                <polygon points="10,105 30,75 40,75 40,105" fill="#334155" />
-                                
-                                <!-- Boiler -->
-                                <rect x="40" y="40" width="100" height="55" rx="15" fill="url(#train-grad)" stroke="#111" stroke-width="2"/>
-                                <!-- Golden Boiler Stripes -->
-                                <rect x="60" y="40" width="5" height="55" fill="#facc15" opacity="0.8"/>
-                                <rect x="90" y="40" width="5" height="55" fill="#facc15" opacity="0.8"/>
-                                <rect x="120" y="40" width="5" height="55" fill="#facc15" opacity="0.8"/>
-                                
-                                <!-- Cabin -->
-                                <rect x="130" y="20" width="80" height="75" rx="5" fill="url(#cab-grad)" stroke="#111" stroke-width="2"/>
-                                <!-- Cabin Roof -->
-                                <rect x="125" y="15" width="90" height="15" rx="5" fill="#eab308" stroke="#111" stroke-width="2"/>
-                                
-                                <!-- Window & driver sill -->
-                                <rect x="145" y="35" width="40" height="25" rx="5" fill="url(#glass-grad)" stroke="#111" stroke-width="2"/>
-                                <line x1="165" y1="35" x2="165" y2="60" stroke="#111" stroke-width="2"/>
-                                
-                                <!-- Chimney -->
-                                <path d="M55,40 L50,15 L75,15 L70,40 Z" fill="#475569" stroke="#111" stroke-width="2"/>
-                                <rect x="42" y="10" width="40" height="6" rx="3" fill="#111" />
-                                
-                                <!-- Headlight -->
-                                <circle cx="35" cy="55" r="8" fill="#fef08a" stroke="#111" stroke-width="2" class="headlight-bulb"/>
-                                <polygon points="27,50 -20,10 -20,100 27,60" fill="url(#beam)" class="headlight-beam" style="pointer-events: none;"/>
+                    <!-- Hidden actual video element -->
+                    <video id="trainVideo"
+                        src="{{ url_for('static', filename='vecteezy_a-minimal-monorail-train-is-isolated-on-a-bright-green_67482578.mp4') }}"
+                        playsinline muted style="display: none;"></video>
 
-                                <!-- Small Wheel 1 -->
-                                <g class="wheel" transform="translate(60, 95)">
-                                    <circle cx="0" cy="0" r="14" fill="#334155" stroke="#94a3b8" stroke-width="3"/>
-                                    <circle cx="0" cy="0" r="4" fill="#ef4444"/>
-                                    <line x1="0" y1="-14" x2="0" y2="14" stroke="#94a3b8" stroke-width="3"/>
-                                    <line x1="-14" y1="0" x2="14" y2="0" stroke="#94a3b8" stroke-width="3"/>
-                                </g>
-                                <!-- Small Wheel 2 -->
-                                <g class="wheel" transform="translate(100, 95)">
-                                    <circle cx="0" cy="0" r="14" fill="#334155" stroke="#94a3b8" stroke-width="3"/>
-                                    <circle cx="0" cy="0" r="4" fill="#ef4444"/>
-                                    <line x1="0" y1="-14" x2="0" y2="14" stroke="#94a3b8" stroke-width="3"/>
-                                    <line x1="-14" y1="0" x2="14" y2="0" stroke="#94a3b8" stroke-width="3"/>
-                                </g>
-                                <!-- Big Wheel -->
-                                <g class="wheel" transform="translate(160, 85)">
-                                    <circle cx="0" cy="0" r="24" fill="#334155" stroke="#94a3b8" stroke-width="4"/>
-                                    <circle cx="0" cy="0" r="6" fill="#ef4444"/>
-                                    <line x1="0" y1="-24" x2="0" y2="24" stroke="#94a3b8" stroke-width="4"/>
-                                    <line x1="-24" y1="0" x2="24" y2="0" stroke="#94a3b8" stroke-width="4"/>
-                                    <line x1="-17" y1="-17" x2="17" y2="17" stroke="#94a3b8" stroke-width="4"/>
-                                    <line x1="-17" y1="17" x2="17" y2="-17" stroke="#94a3b8" stroke-width="4"/>
-                                </g>
-                                
-                                <!-- Engine Piston -->
-                                <g class="piston">
-                                    <line x1="60" y1="95" x2="160" y2="85" stroke="#cbd5e1" stroke-width="6" stroke-linecap="round"/>
-                                </g>
-                            </svg>
-                        </div>
+                    <!-- Canvas for transparent chroma keying overlaid -->
+                    <div class="w-full h-[200px] flex justify-center mt-6 z-10 transition-transform duration-500 ease-in-out"
+                        id="canvasWrapper">
+                        <canvas id="trainCanvas"
+                            class="w-full max-w-sm drop-shadow-[0_15px_25px_rgba(0,0,0,0.8)]"></canvas>
                     </div>
                 </div>
             </div>
         </div>
-
-        <style>
-            /* Train Animation CSS */
-            .scene-track {
-                position: absolute;
-                bottom: 10px;
-                width: 200%;
-                height: 6px;
-                background-color: #64748b;
-                border-top: 2px dashed #cbd5e1;
-                left: 0;
-            }
-            .locomotive-wrapper {
-                position: absolute;
-                bottom: 5px;
-                left: 50%;
-                transform: translateX(-50%);
-                width: 240px;
-                height: 120px;
-            }
-            
-            /* Smoke Particles */
-            .smoke {
-                position: absolute;
-                background: rgba(255, 255, 255, 0.9);
-                border-radius: 50%;
-                filter: blur(2px);
-                left: 55px; /* Aligned with chimney */
-                top: -5px;
-                opacity: 0;
-            }
-            .smoke.s1 { width: 15px; height: 15px; }
-            .smoke.s2 { width: 25px; height: 25px; }
-            .smoke.s3 { width: 40px; height: 40px; }
-
-            /* Running Animations */
-            .running .scene-track {
-                animation: trackMove 1s linear infinite;
-            }
-            .running .wheel {
-                animation: spin 0.8s linear infinite;
-                transform-origin: center;
-            }
-            .running .piston {
-                animation: pistonMove 0.8s linear infinite;
-            }
-            .running .locomotive-wrapper {
-                animation: trainBump 0.5s ease-in-out infinite alternate;
-            }
-            .running .headlight-beam {
-                animation: beamflicker 0.1s infinite alternate;
-            }
-            
-            .running .smoke.s1 { animation: puff 0.8s infinite; }
-            .running .smoke.s2 { animation: puff 0.8s 0.25s infinite; }
-            .running .smoke.s3 { animation: puff 0.8s 0.5s infinite; }
-
-            /* Stopped Animations */
-            .stopped .scene-track { transform: translateX(0); }
-            .stopped .wheel { transform: rotate(0deg); }
-            .stopped .headlight-beam { opacity: 0.1; }
-            .stopped .headlight-bulb { fill: #fef08a80; }
-            
-            .stopped .smoke.s1 { animation: puffSlow 2s infinite; }
-            .stopped .smoke.s2 { animation: puffSlow 2s 0.6s infinite; }
-            .stopped .smoke.s3 { animation: puffSlow 2s 1.2s infinite; }
-
-            /* Keyframes */
-            @keyframes spin { 100% { transform: rotate(-360deg); } } 
-            @keyframes trackMove {
-                from { transform: translateX(0%); }
-                to { transform: translateX(-20%); } /* Track pattern backwards */
-            }
-            @keyframes trainBump {
-                0% { bottom: 5px; }
-                100% { bottom: 7px; }
-            }
-            @keyframes pistonMove {
-                0% { transform: translateX(0) translateY(0); }
-                25% { transform: translateX(-5px) translateY(5px); }
-                50% { transform: translateX(0) translateY(10px); }
-                75% { transform: translateX(5px) translateY(5px); }
-                100% { transform: translateX(0) translateY(0); }
-            }
-            @keyframes puff {
-                0% { transform: translate(0, 0) scale(0.5); opacity: 0.8; }
-                100% { transform: translate(80px, -60px) scale(3); opacity: 0; }
-            }
-            @keyframes puffSlow {
-                0% { transform: translate(0, 0) scale(0.5); opacity: 0.5; }
-                100% { transform: translate(15px, -40px) scale(2); opacity: 0; }
-            }
-            @keyframes beamflicker {
-                from { opacity: 0.6; }
-                to { opacity: 0.9; }
-            }
-        </style>
     </div>
 
-    <div class="bg-white p-6 rounded-2xl shadow-2xl">
+    <!-- 📍 Detailed Route Schedule with Animated Tracker -->
+    <div class="bg-white p-6 rounded-2xl shadow-2xl overflow-hidden">
         <h3 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
             <i class="fas fa-route text-orange-500 mr-3"></i> Detailed Route Schedule
         </h3>
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50 rounded-t-xl">
-                    <tr>
-                        <th
-                            class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider rounded-tl-xl">
-                            #</th>
-                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Station
-                        </th>
-                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Arr.
-                            Time</th>
-                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Dep.
-                            Time</th>
-                        <th
-                            class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider rounded-tr-xl">
-                            Day</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-100">
-                    {% for stop in route %}
-                    <tr class="
-                        {% if stop.get('isCurrent') %}
-                            bg-blue-50 border-l-8 border-blue-600 text-blue-900 font-extrabold shadow-inner
-                            hover:bg-blue-100
-                        {% else %}
-                            text-gray-700 hover:bg-gray-50
-                        {% endif %}
-                        transition duration-150 relative">
 
-                        <td class="px-4 py-4 whitespace-nowrap text-center text-sm">
+        <div class="relative" id="trackingContainer">
+            <!-- Continuous Track Background Line -->
+            <div class="absolute left-[38px] top-12 bottom-12 w-1 bg-gray-200 z-0"></div>
+
+            <!-- Animated Moving Train Pointer -->
+            <div id="trainPointer"
+                class="absolute left-[20px] top-12 w-10 h-10 bg-white border-4 border-blue-600 rounded-full flex items-center justify-center shadow-lg z-20 transition-all duration-[2000ms] ease-out transform pointer-events-none">
+                <i class="fas fa-train text-blue-600"></i>
+            </div>
+
+            <div class="overflow-x-auto select-none pl-2">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50 rounded-t-xl">
+                        <tr>
+                            <th
+                                class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider rounded-tl-xl w-24">
+                                Status</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                                Station</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                                Arr. Time</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                                Dep. Time</th>
+                            <th
+                                class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider rounded-tr-xl">
+                                Day</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-100">
+                        {% for stop in route %}
+                        <!-- UNIQUE CURRENT STATION HIGHLIGHTING -->
+                        <tr class="
                             {% if stop.get('isCurrent') %}
-                            <i class="fas fa-train-subway text-2xl text-blue-600 animate-bounce"></i>
+                                current-station-row bg-blue-50/70 text-blue-900 font-extrabold shadow-inner
                             {% else %}
-                            {{ loop.index }}
+                                text-gray-700 hover:bg-gray-50
                             {% endif %}
-                        </td>
+                            transition duration-150 relative">
 
-                        <td class="px-4 py-4 whitespace-nowrap">
-                            <div class="text-base font-semibold">{{ stop.get('stationName') or (stop.get('station') or
-                                {}).get('name') or stop.get('name') or 'N/A' }}</div>
-                            <div class="text-xs text-gray-500">({{ stop.get('stationCode') or (stop.get('station') or
-                                {}).get('code') or stop.get('code') or 'N/A' }})</div>
-                        </td>
+                            <!-- Track nodes -->
+                            <td class="px-4 py-5 whitespace-nowrap text-center text-sm relative z-10 w-24">
+                                {% if loop.first %}
+                                <div class="w-4 h-4 mx-auto rounded-full bg-blue-600 ring-4 ring-blue-100"></div>
+                                {% elif loop.last %}
+                                <div class="w-4 h-4 mx-auto rounded-full bg-red-500 ring-4 ring-red-100"></div>
+                                {% else %}
+                                <div class="w-3 h-3 mx-auto rounded-full bg-white border-2 border-gray-400"></div>
+                                {% endif %}
+                            </td>
 
-                        <td class="px-4 py-4 whitespace-nowrap text-base">
-                            {% set arr = stop.get('arrivalTime') or (stop.get('schedule') or {}).get('arrival') %}
-                            {% if arr %}
-                            {{ arr }}
-                            {% else %}
-                            <span class="text-gray-400">--:--</span>
-                            {% endif %}
-                        </td>
+                            <!-- Station Name -->
+                            <td class="px-4 py-5 whitespace-nowrap">
+                                <div class="text-base font-semibold">{{ stop.get('stationName') or (stop.get('station')
+                                    or {}).get('name') or stop.get('name') or 'N/A' }}</div>
+                                <div class="text-xs text-gray-500">({{ stop.get('stationCode') or (stop.get('station')
+                                    or {}).get('code') or stop.get('code') or 'N/A' }})</div>
+                            </td>
 
-                        <td class="px-4 py-4 whitespace-nowrap text-base">
-                            {% set dep = stop.get('departureTime') or (stop.get('schedule') or {}).get('departure') %}
-                            {% if dep %}
-                            {{ dep }}
-                            {% else %}
-                            <span class="text-gray-400">--:--</span>
-                            {% endif %}
-                        </td>
+                            <!-- Arrival Time -->
+                            <td class="px-4 py-5 whitespace-nowrap text-base">
+                                {% set arr = stop.get('arrivalTime') or (stop.get('schedule') or {}).get('arrival') %}
+                                {% if arr %}
+                                {{ arr }}
+                                {% else %}
+                                <span class="text-gray-400">--:--</span>
+                                {% endif %}
+                            </td>
 
-                        <td class="px-4 py-4 whitespace-nowrap text-base font-bold">
-                            {{ stop.get('day') or stop.get('journeyDay') or '--' }}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            <!-- Departure Time -->
+                            <td class="px-4 py-5 whitespace-nowrap text-base">
+                                {% set dep = stop.get('departureTime') or (stop.get('schedule') or {}).get('departure')
+                                %}
+                                {% if dep %}
+                                {{ dep }}
+                                {% else %}
+                                <span class="text-gray-400">--:--</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Journey Day -->
+                            <td class="px-4 py-5 whitespace-nowrap text-base font-bold">
+                                {{ stop.get('day') or stop.get('journeyDay') or '--' }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
     {% endif %}
 </div>
 
+<!-- Scripts for Video Chroma-Key & Tracker Animation -->
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // --- Date Picker Fallback ---
         const today = new Date().toISOString().split('T')[0];
         const dateInput = document.getElementById('new_journey_date');
-        if (!dateInput.value) {
+        if (dateInput && !dateInput.value) {
             dateInput.value = today;
+        }
+
+        // Only run logic if the video exists
+        const video = document.getElementById('trainVideo');
+        if (!video) return;
+
+        // --- Video Green Screen (Chroma-Key) Logic ---
+        const canvas = document.getElementById('trainCanvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+        // Pass Python variable safely to avoid JS formatter errors
+        const isRunningStr = "{{ 'true' if is_running else 'false' }}";
+        const isRunning = (isRunningStr === "true");
+        const canvasWrapper = document.getElementById('canvasWrapper');
+
+        video.addEventListener('loadeddata', () => {
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 360;
+
+            if (isRunning) {
+                video.loop = true;
+                video.play().catch(e => console.log("Video Play Error:", e));
+            } else {
+                // If it's stopped, extract only the first frame and jump back to the start!
+                video.currentTime = 0;
+                video.pause();
+                setTimeout(() => {
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    removeGreenScreen();
+                    // Lower opacity slightly to indicate halted
+                    canvasWrapper.style.opacity = '0.8';
+                }, 300); // 300ms buffer for frame
+            }
+        });
+
+        // Trigger loop frame processing
+        video.addEventListener('play', function processLoop() {
+            if (video.paused && !isRunning) return;
+            if (video.ended) return;
+
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            removeGreenScreen();
+
+            if (isRunning) {
+                requestAnimationFrame(processLoop);
+            }
+        });
+
+        // Remove the #00FF00 style bright greens perfectly
+        function removeGreenScreen() {
+            let frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            let length = frame.data.length;
+
+            for (let i = 0; i < length; i += 4) {
+                let r = frame.data[i + 0];
+                let g = frame.data[i + 1];
+                let b = frame.data[i + 2];
+                let a = frame.data[i + 3];
+
+                // Vecteezy bright green usually has very high G, low R & B
+                if (g > 110 && r < g * 0.7 && b < g * 0.75) {
+                    frame.data[i + 3] = 0; // Force transparent alpha!
+                }
+            }
+            ctx.putImageData(frame, 0, 0);
+        }
+
+        // --- Animated UI Route Tracker ---
+        const container = document.getElementById('trackingContainer');
+        const trainPointer = document.getElementById('trainPointer');
+        const currentTarget = document.querySelector('.current-station-row');
+
+        if (currentTarget && trainPointer && container) {
+            // Wait slightly for DOM to settle
+            setTimeout(() => {
+                const containerRect = container.getBoundingClientRect();
+                const targetRect = currentTarget.getBoundingClientRect();
+
+                // Calculate EXACT center align of the target row relative to the container tracking line
+                let topOffset = targetRect.top - containerRect.top + (targetRect.height / 2) - (trainPointer.offsetHeight / 2);
+
+                // If it is 'Running Between', move it halfway down the NEXT station block to simulate active movement
+                if (isRunning) {
+                    const nextRow = currentTarget.nextElementSibling;
+                    if (nextRow) {
+                        const nextRect = nextRow.getBoundingClientRect();
+                        const nextOffset = nextRect.top - containerRect.top + (nextRect.height / 2) - (trainPointer.offsetHeight / 2);
+                        // Stop half-way!
+                        topOffset = (topOffset + nextOffset) / 2;
+                    }
+                    trainPointer.classList.add("bg-green-100", "border-green-500", "shadow-[0_0_20px_#22c55e]");
+                    trainPointer.innerHTML = '<i class="fas fa-train text-green-600 animate-pulse"></i>';
+                }
+
+                // Apply massive CSS transition to scroll the train all the way down
+                trainPointer.style.transform = `translateY(${topOffset}px)`;
+            }, 800); // Wait 800ms to allow a dramatic visual pause before animating the train tracker
         }
     });
 </script>
