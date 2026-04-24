@@ -10,13 +10,32 @@ BASE_URL = "https://api.railradar.org/api/v1/trains/between"
 STATION_SEARCH_URL = "https://api.railradar.org/api/v1/search/stations?query="
 LIVE_API_BASE = "https://api.railradar.org/api/v1/trains"
 
-RAILRADAR_API_KEY = os.environ.get("RAILRADAR_API_KEY", "") # Render will inject this environment variable securely
+RAILRADAR_API_KEY = os.environ.get("RAILRADAR_API_KEY")
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0",
-    "Accept": "application/json",
-    "X-API-Key": RAILRADAR_API_KEY
-}
+if not RAILRADAR_API_KEY:
+    print("API KEY NOT FOUND")
+else:
+    print("API KEY LOADED")
+
+def add_api_key(url):
+    if "?" in url:
+        return f"{url}&apiKey={RAILRADAR_API_KEY}"
+    else:
+        return f"{url}?apiKey={RAILRADAR_API_KEY}"
+
+@app.route("/test_api")
+def test_api():
+    try:
+        url = add_api_key("https://api.railradar.org/api/v1/search/stations?query=pune")
+        response = requests.get(url, timeout=15)
+        
+        return {
+            "status_code": response.status_code,
+            "response": response.json()
+        }
+        
+    except Exception as e:
+        return {"error": str(e)}
 
 MANUAL_STATIONS = {
     "chinchwad": "CCH",
@@ -26,10 +45,12 @@ MANUAL_STATIONS = {
     "lonavala": "LNL"
 }
 
+
 def minutes_to_time(minutes):
     if not isinstance(minutes, int):
         return "N/A"
     return f"{minutes//60:02d}:{minutes%60:02d}"
+
 
 def get_station_code(station_name):
     if not station_name:
@@ -38,40 +59,23 @@ def get_station_code(station_name):
     station_name_lower = station_name.lower().strip()
 
     if station_name_lower in MANUAL_STATIONS:
-        print(f"✅ Manual match: {station_name} → {MANUAL_STATIONS[station_name_lower]}")
         return MANUAL_STATIONS[station_name_lower]
 
     try:
-        url = STATION_SEARCH_URL + quote(station_name)
-        print(f"🔍 Searching station: {url}")
-
-        response = requests.get(url, headers=HEADERS, timeout=5)
-
-        try:
-            data = response.json()
-        except:
-            print("❌ JSON decode failed")
-            return None
-
-        stations = data.get("data", {}).get("stations", [])
+        url = add_api_key(STATION_SEARCH_URL + quote(station_name))
+        response = requests.get(url, timeout=15)
+        data = response.json()
+        
+        data_block = data.get("data") or {}
+        stations = data_block.get("stations", []) or []
 
         if not stations:
-            print(f"❌ No stations found for: {station_name}")
             return None
 
-        filtered = [
-            s for s in stations
-            if not any(x in s.get("name", "").lower() for x in ["shed", "yard", "depot"])
-        ]
-
-        chosen = filtered[0] if filtered else stations[0]
-        code = chosen.get("code")
-
-        print(f"✅ API match: {station_name} → {code}")
-        return code
+        return stations[0].get("code")
 
     except Exception as e:
-        print("❌ Station API error:", e)
+        print("Station API error:", e)
         return None
 
 
@@ -90,52 +94,53 @@ def home():
         dest_code = get_station_code(dest_name)
 
         if not src_code or not dest_code:
-            error = f"Invalid station names. Try simple names like Pune, Mumbai."
+            error = f"Invalid station names: {src_name} or {dest_name} not found"
         else:
             try:
-                url = f"{BASE_URL}?from={src_code}&to={dest_code}"
-                print(f"🚀 Fetching trains: {url}")
+                url = add_api_key(f"{BASE_URL}?from={src_code}&to={dest_code}")
+                response = requests.get(url, timeout=15)
+                data = response.json()
 
-                response = requests.get(url, headers=HEADERS, timeout=5)
+                if not data.get("success"):
+                    error = f"API Error: {data.get('error', {}).get('message', 'Failed to fetch trains')}"
+                else:
+                    data_block = data.get("data") or {}
+                    trains_data = (
+                        data_block.get("TrainsBetweenStationsResult") or
+                        data_block.get("trains") or
+                        []
+                    )
 
-                try:
-                    data = response.json()
-                except:
-                    error = "API response error."
-                    return render_template("index.html", trains=[], error=error)
+                    for t in trains_data:
+                        from_sched = t.get("fromStationSchedule") or {}
+                        to_sched = t.get("toStationSchedule") or {}
+                        travel_mins = t.get("travelTimeMinutes") or 0
+                        t_type = str(t.get("type") or "N/A")
 
-                trains_data = data.get("data", {}).get("TrainsBetweenStationsResult", []) \
-                           or data.get("data", {}).get("trains", []) \
-                           or []
+                        trains.append({
+                            "number": str(t.get("trainNumber") or "N/A"),
+                            "name": str(t.get("trainName") or "N/A"),
+                            "type": t_type,
+                            "departure": minutes_to_time(from_sched.get("departureMinutes")),
+                            "arrival": minutes_to_time(to_sched.get("arrivalMinutes")),
+                            "duration": f"{travel_mins//60}h {travel_mins%60}m",
+                            "days": str(t.get("runningDays") or "Daily")
+                        })
 
-                for t in trains_data:
-                    from_sched = t.get("fromStationSchedule", {})
-                    to_sched = t.get("toStationSchedule", {})
+                    if selected_type != "ALL":
+                        trains = [t for t in trains if t["type"].lower() == selected_type.lower()]
 
-                    trains.append({
-                        "number": t.get("trainNumber", "N/A"),
-                        "name": t.get("trainName", "N/A"),
-                        "type": t.get("type", "N/A"),
-                        "departure": minutes_to_time(from_sched.get("departureMinutes")),
-                        "arrival": minutes_to_time(to_sched.get("arrivalMinutes")),
-                        "duration": f"{t.get('travelTimeMinutes',0)//60}h {t.get('travelTimeMinutes',0)%60}m"
-                    })
-
-                if selected_type != "ALL":
-                    trains = [t for t in trains if t["type"].lower() == selected_type.lower()]
-
-                if not trains:
-                    error = "No trains found."
+                    if not trains:
+                        error = f"No trains found between {src_name} ({src_code}) and {dest_name} ({dest_code})."
 
             except Exception as e:
-                print("❌ Train API error:", e)
-                error = "Error fetching train data."
+                print("Train API error:", e)
+                error = "Error connecting to train API. Please try again."
 
     return render_template("index.html", trains=trains, error=error, selected_type=selected_type)
 
-
-@app.route("/live_status", methods=["GET"])
-def status():
+@app.route("/live_status")
+def live_status():
     train_number = request.args.get("train_number")
     journey_date = request.args.get("journey_date")
 
@@ -147,27 +152,36 @@ def status():
     except:
         date = journey_date
 
-    schedule_url = f"{LIVE_API_BASE}/{train_number}/schedule?journeyDate={date}"
-    live_url = f"{LIVE_API_BASE}/{train_number}?dataType=live&journeyDate={date}"
-
     try:
-        schedule_resp = requests.get(schedule_url, headers=HEADERS, timeout=5)
-        schedule_data = schedule_resp.json()
+        schedule_url = add_api_key(f"{LIVE_API_BASE}/{train_number}/schedule?journeyDate={date}")
+        live_url = add_api_key(f"{LIVE_API_BASE}/{train_number}?dataType=live&journeyDate={date}")
+
+        schedule_response = requests.get(schedule_url, timeout=15)
+        schedule_data = schedule_response.json()
 
         if not schedule_data.get("success"):
-            return render_template("live_status.html", error="Schedule not found")
+            error_msg = schedule_data.get('error', {}).get('message', 'Schedule not found')
+            return render_template("live_status.html", error=f"Error: {error_msg}")
 
-        train_info = schedule_data["data"]["train"]
-        route = schedule_data["data"]["route"]
+        data_block = schedule_data.get("data") or {}
+        train_info = data_block.get("train") or {}
+        route = data_block.get("route") or []
 
-        live_resp = requests.get(live_url, headers=HEADERS, timeout=5)
-        live_data = live_resp.json() if live_resp.status_code == 200 else {}
+        source_obj = train_info.get("source") or train_info.get("from") or {}
+        source = source_obj.get("name") if isinstance(source_obj, dict) else "N/A"
+        
+        dest_obj = train_info.get("destination") or train_info.get("to") or {}
+        destination = dest_obj.get("name") if isinstance(dest_obj, dict) else "N/A"
+
+        live_response = requests.get(live_url, timeout=15)
+        live_data = live_response.json()
 
         current_station = None
         status_message = "No live data"
 
         if live_data.get("success"):
-            loc = live_data["data"].get("currentLocation", {})
+            l_data_block = live_data.get("data") or {}
+            loc = l_data_block.get("currentLocation") or {}
             current_station = loc.get("stationCode")
             status = loc.get("status")
 
@@ -178,19 +192,18 @@ def status():
 
         return render_template(
             "live_status.html",
-            train_number=train_info["number"],
-            train_name=train_info["name"],
-            source=train_info["source"]["name"],
-            destination=train_info["destination"]["name"],
+            train_number=train_info.get("number", "N/A"),
+            train_name=train_info.get("name", "N/A"),
+            source=source,
+            destination=destination,
             route=route,
             current_station=current_station,
             status_message=status_message
         )
 
     except Exception as e:
-        print("❌ Live error:", e)
-        return render_template("live_status.html", error="Error fetching data")
-
+        print("Live error:", e)
+        return render_template("live_status.html", error="Error fetching live data. Train might not be running today.")
 
 @app.route("/train_details")
 def train_details():
@@ -200,24 +213,26 @@ def train_details():
         return render_template("train_details.html", train_info=None)
 
     try:
-        url = f"{LIVE_API_BASE}/{train_number}"
-        response = requests.get(url, headers=HEADERS, timeout=5)
+        url = add_api_key(f"{LIVE_API_BASE}/{train_number}")
+        response = requests.get(url, timeout=15)
         data = response.json()
 
         if not data.get("success"):
-            return render_template("train_details.html", error="Train not found")
+            error_msg = data.get('error', {}).get('message', 'Train not found')
+            return render_template("train_details.html", error=f"Error: {error_msg}")
+            
+        data_block = data.get("data") or {}
+        train_info = data_block.get("train") or {}
 
-        return render_template("train_details.html", train_info=data["data"]["train"])
+        return render_template("train_details.html", train_info=train_info)
 
     except Exception as e:
-        print("❌ Details error:", e)
+        print("Details error:", e)
         return render_template("train_details.html", error="Error fetching details")
-
 
 @app.route("/about")
 def about():
     return render_template("about.html")
-
 
 if __name__ == "__main__":
     app.run(debug=True)
